@@ -305,21 +305,43 @@ class MaveoClient:
         try:
             resp = self._session.post(url, json=payload, timeout=10)
         except requests.RequestException as e:
-            raise APIError(f"Request failed: {e}") from e
+            raise APIError(
+                f"Request to {url} failed: {e} (payload: {payload})"
+            ) from e
 
         if not resp.ok:
-            raise APIError(f"HTTP {resp.status_code}: {resp.text}")
+            raise APIError(
+                f"HTTP {resp.status_code} from {url}: {resp.text}"
+                f" (payload: {payload})"
+            )
 
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise APIError(
+                f"Invalid JSON (HTTP {resp.status_code}) from {url}: {e}"
+                f" (response body: {resp.text!r}, payload: {payload})"
+            ) from e
 
     def _post_201(self, url: str, payload: dict) -> dict:
         """POST expecting HTTP 201 Created."""
         try:
             resp = self._session.post(url, json=payload, timeout=10)
         except requests.RequestException as e:
-            raise APIError(f"Request failed: {e}") from e
+            raise APIError(
+                f"Request to {url} failed: {e} (payload: {payload})"
+            ) from e
 
         if resp.status_code != 201:
-            raise APIError(f"HTTP {resp.status_code}: {resp.text}")
+            raise APIError(
+                f"HTTP {resp.status_code} from {url}: {resp.text}"
+                f" (payload: {payload})"
+            )
 
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise APIError(
+                f"Invalid JSON (HTTP {resp.status_code}) from {url}: {e}"
+                f" (response body: {resp.text!r}, payload: {payload})"
+            ) from e

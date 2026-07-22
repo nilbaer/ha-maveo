@@ -315,7 +315,13 @@ class MaveoClient:
                 f" (payload: {payload})"
             )
 
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise APIError(
+                f"Invalid JSON (HTTP {resp.status_code}) from {url}: {e}"
+                f" (response body: {resp.text!r}, payload: {payload})"
+            ) from e
 
     def _post_201(self, url: str, payload: dict) -> dict:
         """POST expecting HTTP 201 Created."""
@@ -332,4 +338,10 @@ class MaveoClient:
                 f" (payload: {payload})"
             )
 
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as e:
+            raise APIError(
+                f"Invalid JSON (HTTP {resp.status_code}) from {url}: {e}"
+                f" (response body: {resp.text!r}, payload: {payload})"
+            ) from e
