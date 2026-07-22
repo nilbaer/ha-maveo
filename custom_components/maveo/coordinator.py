@@ -111,21 +111,13 @@ class MaveoDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(f"Auth refresh failed: {err}") from err
 
         edata = self._edata()
-        client: MaveoClient = edata["client"]
-
-        try:
-            status = await self.hass.async_add_executor_job(
-                client.get_device_status, self.device_id
-            )
-        except Exception as err:
-            raise UpdateFailed(f"Status check failed: {err}") from err
 
         result = dict(_EMPTY)
-        result["online"] = status.is_online
 
-        if not result["online"]:
-            return result
-
+        # The cloud "status" endpoint reports the last AWS IoT lifecycle event
+        # (e.g. SERVER_INITIATED_DISCONNECT) and can claim the device is
+        # disconnected while it still answers over MQTT. So we don't gate on it;
+        # we probe the device directly and treat a real MQTT response as online.
         try:
             result.update(
                 await self._fetch_mqtt_state(edata["auth"], edata["config"])
@@ -135,6 +127,7 @@ class MaveoDeviceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "MQTT state fetch failed for %s: %s", self.device_id, err
             )
 
+        result["online"] = result.get("door_position") is not None
         return result
 
     async def _fetch_mqtt_state(self, auth: AuthResult, config) -> dict[str, Any]:

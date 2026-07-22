@@ -280,11 +280,12 @@ def cmd_control(config, device_id: str, action: str, listen: float):
     auth = _login(config)
     client = MaveoClient(auth, config)
 
-    # Check device is online (session UUID is not needed for MQTT topics)
+    # The cloud status field is an unreliable liveness signal — it can report a
+    # stale disconnect while the device still answers over MQTT — so we probe
+    # rather than gate on it. (The session UUID is not needed for MQTT topics.)
     status = client.get_device_status(device_id)
     if not status.is_online:
-        print(f"Device is not connected (status: {status.device}).", file=sys.stderr)
-        sys.exit(1)
+        print(f"Warning: cloud reports status '{status.device}'; sending anyway...", file=sys.stderr)
     print(f"Device  : {status.device}")
     print(f"Sending : {action} → {_ACTIONS[action]}")
 
@@ -320,8 +321,7 @@ def cmd_raw(config, device_id: str, payload: str, listen: float, topic: str | No
 
     status = client.get_device_status(device_id)
     if not status.is_online:
-        print(f"Device is not connected (status: {status.device}).", file=sys.stderr)
-        sys.exit(1)
+        print(f"Warning: cloud reports status '{status.device}'; sending anyway...", file=sys.stderr)
 
     cmd_topic = topic or f"{device_id}/cmd"
     print(f"Device  : {status.device}")
@@ -355,8 +355,7 @@ def cmd_info(config, device_id: str):
 
     status = client.get_device_status(device_id)
     if not status.is_online:
-        print(f"Device is not connected (status: {status.device}).", file=sys.stderr)
-        sys.exit(1)
+        print(f"Warning: cloud reports status '{status.device}'; probing device anyway...", file=sys.stderr)
 
     READ_COMMANDS = [
         ("Door status",     Command.STATUS),
@@ -465,8 +464,7 @@ def _bugreport_device(client, auth, config, device: "Device", redact: bool, verb
     lines += ["", "--- IoT Sensors ---"]
 
     if not online:
-        lines.append("(skipped — device not connected)")
-        return lines
+        lines.append("(cloud reported device offline — probing over MQTT anyway)")
 
     async def _run():
         results = {}
