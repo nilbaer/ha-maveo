@@ -34,11 +34,35 @@ Control your **Marantec Maveo** garage door stick from Home Assistant.
 Guest entities are created and removed automatically as guest keys are added or revoked.
 
 ---
+## Ventilation position
+
+This fork adds the `maveo.ventilate` action.
+
+When exactly one Maveo device is available, the device is selected automatically:
+
+```yaml
+action: maveo.ventilate
+data: {}
+```
+
+When multiple devices are available, specify the Maveo device ID:
+
+```yaml
+action: maveo.ventilate
+data:
+  device_id: "YOUR_MAVEO_DEVICE_ID"
+```
+
+The device ID must match a coordinator key used by the integration.
+It is not the Home Assistant device-registry ID.
+
+The service has been tested successfully on my installation:
+the garage door moves to its programmed ventilation position.
 
 ## Installation via HACS
 
 1. In HACS → **Integrations** → three-dot menu → **Custom repositories**
-2. Add `https://github.com/yoda-jm/ha-maveo` — category **Integration**
+2. Add `https://github.com/nilbaer/ha-maveo` — category **Integration**
 3. Install **Maveo** and restart Home Assistant
 4. **Settings → Integrations → Add** → search **Maveo**
 5. Enter your Maveo email, password, and region (EU / US)
